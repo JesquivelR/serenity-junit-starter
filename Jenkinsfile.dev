@@ -1,0 +1,35 @@
+pipeline {
+agent any
+
+stages {
+    stage('Instalación de dependencias') {
+        steps {
+            sh '/var/lib/jenkins/eks-workspace/tools/hudson.tasks.Maven_MavenInstallation/jenkinsmvn/bin/mvn clean dependency:resolve'
+        }
+    }
+
+    stage('Pruebas') {
+        steps {
+            sh '/var/lib/jenkins/eks-workspace/tools/hudson.tasks.Maven_MavenInstallation/jenkinsmvn/bin/mvn test -q'
+        }
+    }
+
+    stage('Publish HTML report') {
+        steps {
+            // Ejecutar el comando serenity:aggregate para generar el informe de Serenity
+            sh '/var/lib/jenkins/eks-workspace/tools/hudson.tasks.Maven_MavenInstallation/jenkinsmvn/bin/mvn serenity:aggregate'
+
+            // Crear un artefacto con el informe de Serenity
+            publishHTML(target: [
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportName: 'Serenity Report',
+                reportDir: 'target/site/serenity',
+                reportFiles: 'index.html',
+                reportTitles: 'Serenity Report'
+            ])
+        }
+    }
+}
+}
